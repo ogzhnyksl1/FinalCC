@@ -1,0 +1,163 @@
+.home-container {
+  padding: 1.5rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .home-container {
+    padding: 2rem;
+  }
+}
+
+.home-header {
+  margin-bottom: 2rem;
+}
+
+.home-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--primary-green);
+  margin-bottom: 0.5rem;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .home-grid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.post-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.post-create {
+  background-color: var(--light-gray);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.post-create-inner {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.post-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: var(--medium-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.post-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-input-container {
+  flex-grow: 1;
+}
+
+.post-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--medium-gray);
+  border-radius: 0.5rem;
+  resize: none;
+  font-size: 0.875rem;
+}
+
+.post-textarea:focus {
+  outline: none;
+  border-color: var(--primary-green);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+}
+
+.post-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.post-add-image {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--medium-gray);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.post-add-image:hover {
+  color: var(--primary-green);
+}
+
+.post-add-image svg {
+  margin-right: 0.25rem;
+}
+
+.post-submit {
+  background-color: var(--primary-green);
+  color: var(--white);
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.25rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.post-submit:hover {
+  background-color: var(--secondary-green);
+}
+
+.post-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.events-section {
+  margin-bottom: 1.5rem;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.view-all {
+  display: block;
+  text-align: center;
+  color: var(--primary-green);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
+

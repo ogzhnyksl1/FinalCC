@@ -1,0 +1,131 @@
+.footer {
+  background-color: var(--dark-gray);
+  color: var(--white);
+  padding: 2rem 0;
+  margin-top: auto;
+}
+
+.footer-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .footer-container {
+    flex-direction: row;
+  }
+}
+
+.footer-logo {
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-logo {
+    margin-bottom: 0;
+  }
+}
+
+.footer-logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--secondary-green);
+  margin-bottom: 0.5rem;
+}
+
+.footer-tagline {
+  color: var(--light-gray);
+  font-size: 0.875rem;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-links {
+    flex-direction: row;
+    margin-top: 0;
+  }
+}
+
+.footer-links-column {
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .footer-links-column {
+    margin-bottom: 0;
+    margin-left: 2rem;
+  }
+}
+
+.footer-links-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-link {
+  color: var(--light-gray);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: var(--secondary-green);
+}
+
+.footer-button {
+  background: none;
+  border: none;
+  color: var(--light-gray);
+  font-size: 0.875rem;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.footer-button:hover {
+  color: var(--secondary-green);
+}
+
+.footer-divider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--medium-gray);
+  margin: 1.5rem 0;
+}
+
+.footer-copyright {
+  text-align: center;
+  color: var(--medium-gray);
+  font-size: 0.75rem;
+}
+
+.footer-copyright p {
+  margin-bottom: 0.25rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
