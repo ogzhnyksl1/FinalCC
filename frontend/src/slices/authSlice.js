@@ -1,15 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-const initialState = {
-  userInfo: localStorage.getItem("userInfo") ? JSON.parse(localStorage.getItem("userInfo")) : null,
-  userProfile: null,
-  loading: false,
-  error: null,
-  success: false,
-}
+const userInfoFromStorage = localStorage.getItem("userInfo") ? JSON.parse(localStorage.getItem("userInfo")) : null
 
-export const login = createAsyncThunk("auth/login", async ({ email, password, rememberMe }, { rejectWithValue }) => {
+export const login = createAsyncThunk("auth/login", async ({ email, password }, { rejectWithValue }) => {
   try {
     const config = {
       headers: {
@@ -19,11 +13,7 @@ export const login = createAsyncThunk("auth/login", async ({ email, password, re
 
     const { data } = await axios.post("/api/users/login", { email, password }, config)
 
-    if (rememberMe) {
-      localStorage.setItem("userInfo", JSON.stringify(data))
-    } else {
-      sessionStorage.setItem("userInfo", JSON.stringify(data))
-    }
+    localStorage.setItem("userInfo", JSON.stringify(data))
 
     return data
   } catch (error) {
@@ -31,28 +21,23 @@ export const login = createAsyncThunk("auth/login", async ({ email, password, re
   }
 })
 
-export const register = createAsyncThunk(
-  "auth/register",
-  async ({ name, email, password, role }, { rejectWithValue }) => {
-    try {
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-
-      const { data } = await axios.post("/api/users", { name, email, password, role }, config)
-
-      localStorage.setItem("userInfo", JSON.stringify(data))
-
-      return data
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+export const register = createAsyncThunk("auth/register", async ({ name, email, password }, { rejectWithValue }) => {
+  try {
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+      },
     }
-  },
-)
+
+    const { data } = await axios.post("/api/users", { name, email, password }, config)
+
+    localStorage.setItem("userInfo", JSON.stringify(data))
+
+    return data
+  } catch (error) {
+    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
+  }
+})
 
 export const getUserProfile = createAsyncThunk("auth/getUserProfile", async (_, { getState, rejectWithValue }) => {
   try {
@@ -76,7 +61,7 @@ export const getUserProfile = createAsyncThunk("auth/getUserProfile", async (_, 
 
 export const updateUserProfile = createAsyncThunk(
   "auth/updateUserProfile",
-  async (userData, { getState, rejectWithValue }) => {
+  async (user, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -89,7 +74,7 @@ export const updateUserProfile = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.put("/api/users/profile", userData, config)
+      const { data } = await axios.put("/api/users/profile", user, config)
 
       localStorage.setItem("userInfo", JSON.stringify(data))
 
@@ -102,39 +87,23 @@ export const updateUserProfile = createAsyncThunk(
   },
 )
 
-export const uploadResume = createAsyncThunk("auth/uploadResume", async (resumeData, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.post("/api/users/resume", resumeData, config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
+export const logout = createAsyncThunk("auth/logout", async () => {
+  localStorage.removeItem("userInfo")
+  return null
 })
+
+const initialState = {
+  userInfo: userInfoFromStorage,
+  userProfile: null,
+  loading: false,
+  error: null,
+  success: false,
+}
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout: (state) => {
-      localStorage.removeItem("userInfo")
-      sessionStorage.removeItem("userInfo")
-      state.userInfo = null
-      state.userProfile = null
-      state.loading = false
-      state.error = null
-    },
     clearError: (state) => {
       state.error = null
     },
@@ -191,7 +160,7 @@ const authSlice = createSlice({
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.loading = false
         state.userInfo = action.payload
-        state.userProfile = action.payload
+        state.userProfile = { ...state.userProfile, ...action.payload }
         state.success = true
         state.error = null
       })
@@ -200,25 +169,14 @@ const authSlice = createSlice({
         state.error = action.payload
         state.success = false
       })
-      .addCase(uploadResume.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(uploadResume.fulfilled, (state, action) => {
-        state.loading = false
-        state.userProfile = { ...state.userProfile, resume: action.payload.resumeUrl }
-        state.success = true
-        state.error = null
-      })
-      .addCase(uploadResume.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
+      .addCase(logout.fulfilled, (state) => {
+        state.userInfo = null
+        state.userProfile = null
       })
   },
 })
 
-export const { logout, clearError, resetSuccess } = authSlice.actions
+export const { clearError, resetSuccess } = authSlice.actions
 
 export default authSlice.reducer
+

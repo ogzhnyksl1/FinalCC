@@ -1,148 +1,114 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-export const getReports = createAsyncThunk("reports/getReports", async (_, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
+// Async thunks for reports
+export const fetchReports = createAsyncThunk(
+  "reports/fetchReports",
+  async (communityId, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/api/reports${communityId ? `?communityId=${communityId}` : ''}`)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
     }
-
-    const { data } = await axios.get("/api/reports", config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
   }
-})
-
-export const createReport = createAsyncThunk(
-  "reports/createReport",
-  async (reportData, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.post("/api/reports", reportData, config)
-
-      return data
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
 )
 
-export const updateReportStatus = createAsyncThunk(
-  "reports/updateReportStatus",
-  async ({ reportId, status }, { getState, rejectWithValue }) => {
+export const resolveReport = createAsyncThunk(
+  "reports/resolveReport",
+  async ({ reportId, resolution, actionTaken }, { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/reports/${reportId}/status`, { status }, config)
-
-      return data
+      const response = await axios.put(`/api/reports/${reportId}/resolve`, {
+        resolution,
+        actionTaken
+      })
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
+export const deleteReportedContent = createAsyncThunk(
+  "reports/deleteReportedContent",
+  async ({ reportId, contentType, contentId }, { rejectWithValue }) => {
+    try {
+      const response = await axios.delete(`/api/${contentType}s/${contentId}`, {
+        data: { reportId }
+      })
+      return { reportId, success: true }
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+// Initial state
 const initialState = {
   reports: [],
-  report: null,
   loading: false,
   error: null,
-  success: false,
+  successMessage: null,
 }
 
+// Create slice
 const reportSlice = createSlice({
   name: "reports",
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearReportMessages: (state) => {
       state.error = null
-    },
-    resetSuccess: (state) => {
-      state.success = false
+      state.successMessage = null
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getReports.pending, (state) => {
+      .addCase(fetchReports.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getReports.fulfilled, (state, action) => {
+      .addCase(fetchReports.fulfilled, (state, action) => {
         state.loading = false
         state.reports = action.payload
-        state.error = null
       })
-      .addCase(getReports.rejected, (state, action) => {
+      .addCase(fetchReports.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
+        state.error = action.payload?.message || "Failed to fetch reports"
       })
-      .addCase(createReport.pending, (state) => {
+      .addCase(resolveReport.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
-      .addCase(createReport.fulfilled, (state, action) => {
+      .addCase(resolveReport.fulfilled, (state, action) => {
         state.loading = false
-        state.report = action.payload
-        state.success = true
-        state.error = null
+        state.reports = state.reports.map(report => 
+          report._id === action.payload._id ? action.payload : report
+        )
+        state.successMessage = "Report resolved successfully"
       })
-      .addCase(createReport.rejected, (state, action) => {
+      .addCase(resolveReport.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
-        state.success = false
+        state.error = action.payload?.message || "Failed to resolve report"
       })
-      .addCase(updateReportStatus.pending, (state) => {
+      .addCase(deleteReportedContent.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
-      .addCase(updateReportStatus.fulfilled, (state, action) => {
+      .addCase(deleteReportedContent.fulfilled, (state, action) => {
         state.loading = false
-        state.reports = state.reports.map((report) => (report._id === action.payload._id ? action.payload : report))
-        state.success = true
-        state.error = null
+        state.reports = state.reports.map(report => 
+          report._id === action.payload.reportId 
+            ? { ...report, status: "RESOLVED", resolution: "CONTENT_REMOVED" }
+            : report
+        )
+        state.successMessage = "Content was deleted and report resolved"
       })
-      .addCase(updateReportStatus.rejected, (state, action) => {
+      .addCase(deleteReportedContent.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
-        state.success = false
+        state.error = action.payload?.message || "Failed to delete content"
       })
   },
 })
 
-export const { clearError, resetSuccess } = reportSlice.actions
-
+export const { clearReportMessages } = reportSlice.actions
 export default reportSlice.reducer
-

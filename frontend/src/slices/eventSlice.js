@@ -1,7 +1,32 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-export const getEvents = createAsyncThunk("events/getEvents", async (params, { getState, rejectWithValue }) => {
+export const getFeaturedEvents = createAsyncThunk(
+  "events/getFeaturedEvents",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const {
+        auth: { userInfo },
+      } = getState()
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }
+
+      const { data } = await axios.get("/api/events/featured", config)
+
+      return data
+    } catch (error) {
+      return rejectWithValue(
+        error.response && error.response.data.message ? error.response.data.message : error.message,
+      )
+    }
+  },
+)
+
+export const getAllEvents = createAsyncThunk("events/getAllEvents", async (_, { getState, rejectWithValue }) => {
   try {
     const {
       auth: { userInfo },
@@ -11,7 +36,6 @@ export const getEvents = createAsyncThunk("events/getEvents", async (params, { g
       headers: {
         Authorization: `Bearer ${userInfo.token}`,
       },
-      params,
     }
 
     const { data } = await axios.get("/api/events", config)
@@ -89,26 +113,6 @@ export const updateEvent = createAsyncThunk(
   },
 )
 
-export const deleteEvent = createAsyncThunk("events/deleteEvent", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    await axios.delete(`/api/events/${id}`, config)
-
-    return id
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
 export const registerForEvent = createAsyncThunk(
   "events/registerForEvent",
   async (id, { getState, rejectWithValue }) => {
@@ -125,7 +129,7 @@ export const registerForEvent = createAsyncThunk(
 
       const { data } = await axios.put(`/api/events/${id}/register`, {}, config)
 
-      return { id, message: data.message }
+      return { id, data }
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -134,33 +138,8 @@ export const registerForEvent = createAsyncThunk(
   },
 )
 
-export const unregisterFromEvent = createAsyncThunk(
-  "events/unregisterFromEvent",
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/events/${id}/unregister`, {}, config)
-
-      return { id, message: data.message }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const addEventAnnouncement = createAsyncThunk(
-  "events/addEventAnnouncement",
+export const sendEventAnnouncement = createAsyncThunk(
+  "events/sendEventAnnouncement",
   async ({ id, message }, { getState, rejectWithValue }) => {
     try {
       const {
@@ -176,7 +155,7 @@ export const addEventAnnouncement = createAsyncThunk(
 
       const { data } = await axios.post(`/api/events/${id}/announcements`, { message }, config)
 
-      return { id, announcement: data }
+      return { id, data }
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -186,12 +165,12 @@ export const addEventAnnouncement = createAsyncThunk(
 )
 
 const initialState = {
+  featuredEvents: [],
   events: [],
   event: null,
   loading: false,
   error: null,
   success: false,
-  message: null,
 }
 
 const eventSlice = createSlice({
@@ -203,21 +182,33 @@ const eventSlice = createSlice({
     },
     resetSuccess: (state) => {
       state.success = false
-      state.message = null
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getEvents.pending, (state) => {
+      .addCase(getFeaturedEvents.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getEvents.fulfilled, (state, action) => {
+      .addCase(getFeaturedEvents.fulfilled, (state, action) => {
+        state.loading = false
+        state.featuredEvents = action.payload
+        state.error = null
+      })
+      .addCase(getFeaturedEvents.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload
+      })
+      .addCase(getAllEvents.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(getAllEvents.fulfilled, (state, action) => {
         state.loading = false
         state.events = action.payload
         state.error = null
       })
-      .addCase(getEvents.rejected, (state, action) => {
+      .addCase(getAllEvents.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
@@ -267,69 +258,30 @@ const eventSlice = createSlice({
         state.error = action.payload
         state.success = false
       })
-      .addCase(deleteEvent.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(deleteEvent.fulfilled, (state, action) => {
-        state.loading = false
-        state.events = state.events.filter((event) => event._id !== action.payload)
-        state.success = true
-        state.message = "Event deleted successfully"
-        state.error = null
-      })
-      .addCase(deleteEvent.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
       .addCase(registerForEvent.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
       .addCase(registerForEvent.fulfilled, (state, action) => {
         state.loading = false
         state.success = true
-        state.message = action.payload.message
         state.error = null
       })
       .addCase(registerForEvent.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
-        state.success = false
       })
-      .addCase(unregisterFromEvent.pending, (state) => {
+      .addCase(sendEventAnnouncement.pending, (state) => {
         state.loading = true
         state.error = null
         state.success = false
       })
-      .addCase(unregisterFromEvent.fulfilled, (state, action) => {
+      .addCase(sendEventAnnouncement.fulfilled, (state, action) => {
         state.loading = false
         state.success = true
-        state.message = action.payload.message
         state.error = null
       })
-      .addCase(unregisterFromEvent.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(addEventAnnouncement.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(addEventAnnouncement.fulfilled, (state, action) => {
-        state.loading = false
-        if (state.event && state.event._id === action.payload.id) {
-          state.event.announcements.push(action.payload.announcement)
-        }
-        state.success = true
-        state.error = null
-      })
-      .addCase(addEventAnnouncement.rejected, (state, action) => {
+      .addCase(sendEventAnnouncement.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
         state.success = false

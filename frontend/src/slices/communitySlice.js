@@ -51,90 +51,6 @@ export const getCommunityById = createAsyncThunk(
   },
 )
 
-// Get group by ID
-export const getGroupById = createAsyncThunk("communities/getGroupById", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.get(`/api/groups/${id}`, config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-// Join group
-export const joinGroup = createAsyncThunk("communities/joinGroup", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.put(`/api/groups/${id}/join`, {}, config)
-
-    return { id, message: data.message }
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-// Leave group
-export const leaveGroup = createAsyncThunk("communities/leaveGroup", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.put(`/api/groups/${id}/leave`, {}, config)
-
-    return { id, message: data.message }
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-// Delete group
-export const deleteGroup = createAsyncThunk("communities/deleteGroup", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    await axios.delete(`/api/groups/${id}`, config)
-
-    return id
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
 export const createCommunity = createAsyncThunk(
   "communities/createCommunity",
   async (communityData, { getState, rejectWithValue }) => {
@@ -161,9 +77,9 @@ export const createCommunity = createAsyncThunk(
   },
 )
 
-export const updateCommunity = createAsyncThunk(
-  "communities/updateCommunity",
-  async ({ id, communityData }, { getState, rejectWithValue }) => {
+export const createCommunityPost = createAsyncThunk(
+  "communities/createCommunityPost",
+  async ({ id, postData }, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -176,7 +92,7 @@ export const updateCommunity = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.put(`/api/communities/${id}`, communityData, config)
+      const { data } = await axios.post(`/api/communities/${id}/posts`, postData, config)
 
       return data
     } catch (error) {
@@ -187,84 +103,9 @@ export const updateCommunity = createAsyncThunk(
   },
 )
 
-export const deleteCommunity = createAsyncThunk(
-  "communities/deleteCommunity",
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      await axios.delete(`/api/communities/${id}`, config)
-
-      return id
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const joinCommunity = createAsyncThunk(
-  "communities/joinCommunity",
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/communities/${id}/join`, {}, config)
-
-      return { id, message: data.message }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const leaveCommunity = createAsyncThunk(
-  "communities/leaveCommunity",
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/communities/${id}/leave`, {}, config)
-
-      return { id, message: data.message }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const addCommunityManager = createAsyncThunk(
-  "communities/addCommunityManager",
-  async ({ communityId, userId }, { getState, rejectWithValue }) => {
+export const createCommunityGroup = createAsyncThunk(
+  "communities/createCommunityGroup",
+  async ({ id, groupData }, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -277,34 +118,9 @@ export const addCommunityManager = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.put(`/api/communities/${communityId}/managers`, { userId }, config)
+      const { data } = await axios.post(`/api/communities/${id}/groups`, groupData, config)
 
-      return { communityId, message: data.message }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const removeCommunityManager = createAsyncThunk(
-  "communities/removeCommunityManager",
-  async ({ communityId, userId }, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.delete(`/api/communities/${communityId}/managers/${userId}`, config)
-
-      return { communityId, message: data.message }
+      return data
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -316,11 +132,9 @@ export const removeCommunityManager = createAsyncThunk(
 const initialState = {
   communities: [],
   community: null,
-  group: null,
   loading: false,
   error: null,
   success: false,
-  message: null,
 }
 
 const communitySlice = createSlice({
@@ -332,7 +146,6 @@ const communitySlice = createSlice({
     },
     resetSuccess: (state) => {
       state.success = false
-      state.message = null
     },
   },
   extraReducers: (builder) => {
@@ -363,67 +176,6 @@ const communitySlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
-      .addCase(getGroupById.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(getGroupById.fulfilled, (state, action) => {
-        state.loading = false
-        state.group = action.payload
-        state.error = null
-      })
-      .addCase(getGroupById.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
-      .addCase(joinGroup.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(joinGroup.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(joinGroup.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(leaveGroup.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(leaveGroup.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(leaveGroup.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(deleteGroup.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(deleteGroup.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = "Group deleted successfully"
-        state.error = null
-      })
-      .addCase(deleteGroup.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
       .addCase(createCommunity.pending, (state) => {
         state.loading = true
         state.error = null
@@ -440,102 +192,38 @@ const communitySlice = createSlice({
         state.error = action.payload
         state.success = false
       })
-      .addCase(updateCommunity.pending, (state) => {
+      .addCase(createCommunityPost.pending, (state) => {
         state.loading = true
         state.error = null
         state.success = false
       })
-      .addCase(updateCommunity.fulfilled, (state, action) => {
+      .addCase(createCommunityPost.fulfilled, (state, action) => {
         state.loading = false
-        state.communities = state.communities.map((community) =>
-          community._id === action.payload._id ? action.payload : community,
-        )
-        state.community = action.payload
+        if (state.community) {
+          state.community.posts.push(action.payload)
+        }
         state.success = true
         state.error = null
       })
-      .addCase(updateCommunity.rejected, (state, action) => {
+      .addCase(createCommunityPost.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
         state.success = false
       })
-      .addCase(deleteCommunity.pending, (state) => {
+      .addCase(createCommunityGroup.pending, (state) => {
         state.loading = true
         state.error = null
         state.success = false
       })
-      .addCase(deleteCommunity.fulfilled, (state, action) => {
+      .addCase(createCommunityGroup.fulfilled, (state, action) => {
         state.loading = false
-        state.communities = state.communities.filter((community) => community._id !== action.payload)
+        if (state.community) {
+          state.community.groups.push(action.payload)
+        }
         state.success = true
-        state.message = "Community deleted successfully"
         state.error = null
       })
-      .addCase(deleteCommunity.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(joinCommunity.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(joinCommunity.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(joinCommunity.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(leaveCommunity.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(leaveCommunity.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(leaveCommunity.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(addCommunityManager.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(addCommunityManager.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(addCommunityManager.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(removeCommunityManager.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(removeCommunityManager.fulfilled, (state, action) => {
-        state.loading = false
-        state.success = true
-        state.message = action.payload.message
-        state.error = null
-      })
-      .addCase(removeCommunityManager.rejected, (state, action) => {
+      .addCase(createCommunityGroup.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
         state.success = false

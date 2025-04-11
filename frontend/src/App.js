@@ -18,10 +18,12 @@ import SearchPage from "./pages/SearchPage"
 import NotificationsPage from "./pages/NotificationsPage"
 import AdminDashboardPage from "./pages/AdminDashboardPage"
 import CommunityManagerPage from "./pages/CommunityManagerPage"
+import PostModerationPage from "./pages/PostModerationPage"
 import EventManagerPage from "./pages/EventManagerPage"
-import SettingsPage from "./pages/SettingsPage"
-import ReportsPage from "./pages/ReportsPage"
-import FeedbackPage from "./pages/FeedbackPage"
+import ReportManagementPage from "./pages/ReportManagementPage"
+import EventAnnouncementsPage from "./pages/EventAnnouncementsPage"
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage"
+import AdminSettingsPage from "./pages/AdminSettingsPage"
 import PrivateRoute from "./components/PrivateRoute"
 import AdminRoute from "./components/AdminRoute"
 import CommunityManagerRoute from "./components/CommunityManagerRoute"
@@ -86,6 +88,22 @@ const App = () => {
                 }
               />
               <Route
+                path="/communities/:id/moderate"
+                element={
+                  <CommunityManagerRoute>
+                    <PostModerationPage />
+                  </CommunityManagerRoute>
+                }
+              />
+              <Route
+                path="/communities/:id/reports"
+                element={
+                  <CommunityManagerRoute>
+                    <ReportManagementPage />
+                  </CommunityManagerRoute>
+                }
+              />
+              <Route
                 path="/groups/:id"
                 element={
                   <PrivateRoute>
@@ -134,26 +152,18 @@ const App = () => {
                 }
               />
               <Route
+                path="/admin/analytics"
+                element={
+                  <AdminRoute>
+                    <AdminAnalyticsPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
                 path="/admin/settings"
                 element={
                   <AdminRoute>
-                    <SettingsPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/reports"
-                element={
-                  <AdminRoute>
-                    <ReportsPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/feedback"
-                element={
-                  <AdminRoute>
-                    <FeedbackPage />
+                    <AdminSettingsPage />
                   </AdminRoute>
                 }
               />
@@ -166,10 +176,34 @@ const App = () => {
                 }
               />
               <Route
+                path="/post-moderation"
+                element={
+                  <CommunityManagerRoute>
+                    <PostModerationPage />
+                  </CommunityManagerRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <CommunityManagerRoute>
+                    <ReportManagementPage />
+                  </CommunityManagerRoute>
+                }
+              />
+              <Route
                 path="/event-manager"
                 element={
                   <EventManagerRoute>
                     <EventManagerPage />
+                  </EventManagerRoute>
+                }
+              />
+              <Route
+                path="/event-announcements"
+                element={
+                  <EventManagerRoute>
+                    <EventAnnouncementsPage />
                   </EventManagerRoute>
                 }
               />
@@ -183,4 +217,3 @@ const App = () => {
 }
 
 export default App
-

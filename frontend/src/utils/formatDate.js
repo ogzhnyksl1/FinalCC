@@ -1,33 +1,18 @@
-export const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffTime = Math.abs(now - date)
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+import { format, formatDistanceToNow as formatDistance } from "date-fns"
 
-  if (diffDays === 0) {
-    // Today
-    const hours = date.getHours()
-    const minutes = date.getMinutes()
-    const ampm = hours >= 12 ? "PM" : "AM"
-    const formattedHours = hours % 12 || 12
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes
-    return `Today at ${formattedHours}:${formattedMinutes} ${ampm}`
-  } else if (diffDays === 1) {
-    // Yesterday
-    return "Yesterday"
-  } else if (diffDays < 7) {
-    // Within a week
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-    return days[date.getDay()]
-  } else {
-    // More than a week ago
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    const day = date.getDate()
-    const month = months[date.getMonth()]
-    const year = date.getFullYear()
-    const currentYear = now.getFullYear()
+export const formatDate = (date) => {
+  return format(new Date(date), "PPP")
+}
 
-    return currentYear === year ? `${month} ${day}` : `${month} ${day}, ${year}`
-  }
+export const formatTime = (date) => {
+  return format(new Date(date), "p")
+}
+
+export const formatDateTime = (date) => {
+  return format(new Date(date), "PPp")
+}
+
+export const formatDistanceToNow = (date) => {
+  return formatDistance(new Date(date), { addSuffix: true })
 }
 

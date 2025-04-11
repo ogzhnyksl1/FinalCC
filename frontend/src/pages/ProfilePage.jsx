@@ -1,355 +1,351 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { getUserProfile, updateUserProfile, uploadResume } from "../slices/authSlice"
-import Loader from "../components/Loader"
-import Message from "../components/Message"
-import "../styles/pages/ProfilePage.css"
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { getUserProfile, updateUserProfile, clearError, resetSuccess } from "../slices/authSlice";
+import Loader from "../components/Loader";
+import Message from "../components/Message";
+import '../styles/ProfilePage.css';
 
 const ProfilePage = () => {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [bio, setBio] = useState("")
-  const [profilePicture, setProfilePicture] = useState("")
-  const [resume, setResume] = useState("")
-  const [message, setMessage] = useState(null)
-  const [activeTab, setActiveTab] = useState("profile")
-  const [resumeFile, setResumeFile] = useState(null)
-  const [uploadingResume, setUploadingResume] = useState(false)
-
-  const dispatch = useDispatch()
-
-  const { userProfile, loading, error, success } = useSelector((state) => state.auth)
-
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [profilePicture, setProfilePicture] = useState("");
+  const [bio, setBio] = useState("");
+  const [message, setMessage] = useState(null);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  const dispatch = useDispatch();
+  const { userProfile, loading, error, success } = useSelector((state) => state.auth);
+  
   useEffect(() => {
     if (!userProfile) {
-      dispatch(getUserProfile())
+      dispatch(getUserProfile());
     } else {
-      setName(userProfile.name)
-      setEmail(userProfile.email)
-      setBio(userProfile.bio || "")
-      setProfilePicture(userProfile.profilePicture || "")
-      setResume(userProfile.resume || "")
+      setName(userProfile.name);
+      setEmail(userProfile.email);
+      setProfilePicture(userProfile.profilePicture || "");
+      setBio(userProfile.bio || "");
     }
-  }, [dispatch, userProfile])
-
+  }, [dispatch, userProfile]);
+  
+  useEffect(() => {
+    if (success) {
+      setMessage("Profile updated successfully");
+      setTimeout(() => {
+        setMessage(null);
+        dispatch(resetSuccess());
+      }, 3000);
+    }
+  }, [success, dispatch]);
+  
   const submitHandler = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (password !== confirmPassword) {
-      setMessage("Passwords do not match")
+      setMessage("Passwords do not match");
     } else {
-      setMessage(null)
       dispatch(
         updateUserProfile({
           name,
           email,
           password: password ? password : undefined,
-          bio,
           profilePicture,
-        }),
-      )
+          bio,
+        })
+      );
+      setPassword("");
+      setConfirmPassword("");
     }
-  }
-
-  const handleResumeUpload = async (e) => {
-    e.preventDefault()
-    if (!resumeFile) {
-      setMessage("Please select a file to upload")
-      return
-    }
-
-    // In a real implementation, this would handle file upload to a storage service
-    // For now, we'll simulate the upload
-    setUploadingResume(true)
-
-    // Simulate file upload delay
-    setTimeout(() => {
-      // Create a fake URL for the resume
-      const fakeResumeUrl = URL.createObjectURL(resumeFile)
-
-      dispatch(uploadResume({ resumeUrl: fakeResumeUrl }))
-      setUploadingResume(false)
-      setResume(fakeResumeUrl)
-    }, 1500)
-  }
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+  
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-green-600">Your Profile</h1>
-
-        {/* Profile Card - Added to show profile picture */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="p-6 flex flex-col md:flex-row items-center">
-          <div className="max-w-[200px] max-h-[200px] rounded-full overflow-hidden mb-4 md:mb-0 md:mr-6 border-4 border-green-100">
-
-              {profilePicture ? (
-                <img
-                  src={profilePicture || "/placeholder.svg"}
-                  alt={name}
-                  className="w-full h-full object-cover rounded-full "
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = "https://via.placeholder.com/150?text=Profile"
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-16 w-16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              )}
-            </div>
-            <div className="text-center md:text-left">
-              <h2 className="text-2xl font-bold">{name || "Your Name"}</h2>
-              <p className="text-gray-600 mb-2">{email || "your.email@example.com"}</p>
-              <p className="text-gray-700">{bio || "No bio available"}</p>
-            </div>
+    <div className="flex justify-center bg-gray-50 py-4">
+      <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 w-full mx-4 my-8" style={{ maxWidth: "600px" }}>
+        {/* Logo and Header */}
+        <div className="flex items-center mb-6">
+          <div className="h-8 w-8 mr-3">
+            <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 3.6C17.0609 3.6 16.1282 3.90714 15.3333 4.47771C14.5384 5.04828 13.9193 5.85362 13.5605 6.7868C13.2018 7.71997 13.1191 8.73942 13.324 9.72586C13.5289 10.7123 14.0113 11.6163 14.7087 12.3137C15.4062 13.0112 16.3102 13.4935 17.2966 13.6984C18.283 13.9033 19.3025 13.8207 20.2357 13.4619C21.1688 13.1032 21.9742 12.4841 22.5448 11.6891C23.1153 10.8942 23.4225 9.96148 23.4225 9.0225C23.4225 7.74533 22.9135 6.52091 22.0088 5.61618C21.1041 4.71146 19.8796 4.2025 18.6025 4.2025M18 3.6V4.2025V3.6ZM18 3.6C14.4525 3.6 10.9199 4.4829 7.79978 6.14816C4.67962 7.81342 2.09066 10.2015 0.26648 13.101C-1.5577 15.9005 -1.54498 19.0495 0.297867 21.8384C2.14071 24.6274 4.74522 26.9994 7.875 28.6494C11.0048 30.2993 14.5425 31.1645 18.09 31.1458C21.6375 31.1271 25.1652 30.2254 28.2752 28.5432C31.3853 26.861 33.9614 24.4635 35.7726 21.5617C37.5837 18.6599 37.5576 15.5109 35.7016 12.7308" stroke="#ACE63D" strokeWidth="6" strokeLinecap="round"/>
+            </svg>
           </div>
+          <h1 className="text-xl font-semibold">Your Profile</h1>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          
-          <div className="flex border-b border-gray-200 space-x-4 px-4">
-            <button
-              className={`py-3 px-4 font-medium rounded-t-lg ${
-                activeTab === "profile"
-                  ? "border-b-2 border-green-600 text-green-600 bg-green-50"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setActiveTab("profile")}
-            >
-              Profile
-            </button>
-            <button
-              className={`py-3 px-4 font-medium rounded-t-lg ${
-                activeTab === "resume"
-                  ? "border-b-2 border-green-600 text-green-600 bg-green-50"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setActiveTab("resume")}
-            >
-              Resume
-            </button>
-            <button
-              className={`py-3 px-4 font-medium rounded-t-lg ${
-                activeTab === "security"
-                  ? "border-b-2 border-green-600 text-green-600 bg-green-50"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-              }`}
-              onClick={() => setActiveTab("security")}
-            >
-              Security
-            </button>
-          </div>
+        {message && <Message variant="success">{message}</Message>}
+        {error && (
+          <Message variant="error" onClose={() => dispatch(clearError())}>
+            {error}
+          </Message>
+        )}
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <div className="flex flex-col items-center mb-8">
+              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center mb-4 border-2 border-lime-400">
+                {profilePicture ? (
+                  <img
+                    src={profilePicture || "/placeholder.svg"}
+                    alt={name}
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-3xl text-gray-500">👤</span>
+                )}
+              </div>
+              <div className="text-center">
+                <h2 className="text-xl font-semibold">{userProfile?.name}</h2>
+                <p className="text-gray-600">{userProfile?.email}</p>
+                <span className="inline-block bg-lime-100 text-lime-700 text-xs px-2 py-1 rounded-full mt-2">
+                  {userProfile?.role || "Student"}
+                </span>
+                <p className="mt-2 text-gray-700">{userProfile?.bio || "No bio yet"}</p>
+              </div>
+            </div>
 
-          <div className="p-6">
-            {message && <Message variant="error">{message}</Message>}
-            {error && <Message variant="error">{error}</Message>}
-            {success && <Message variant="success">Profile Updated Successfully</Message>}
-            {loading && <Loader />}
+            <div className="mb-6">
+              <div className="flex justify-center gap-2 p-1 rounded-full bg-green-50 border border-green-100">
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-full ${
+                    activeTab === "profile"
+                      ? "bg-white shadow-sm"
+                      : "text-gray-500 hover:text-lime-600"
+                  }`}
+                  onClick={() => setActiveTab("profile")}
+                >
+                  Edit Profile
+                </button>
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-full ${
+                    activeTab === "connections"
+                      ? "bg-white shadow-sm"
+                      : "text-gray-500 hover:text-lime-600"
+                  }`}
+                  onClick={() => setActiveTab("connections")}
+                >
+                  Connections
+                </button>
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-full ${
+                    activeTab === "events"
+                      ? "bg-white shadow-sm"
+                      : "text-gray-500 hover:text-lime-600"
+                  }`}
+                  onClick={() => setActiveTab("events")}
+                >
+                  Events
+                </button>
+                <button
+                  className={`px-4 py-2 text-sm font-medium rounded-full ${
+                    activeTab === "groups"
+                      ? "bg-white shadow-sm"
+                      : "text-gray-500 hover:text-lime-600"
+                  }`}
+                  onClick={() => setActiveTab("groups")}
+                >
+                  Groups
+                </button>
+              </div>
+            </div>
 
             {activeTab === "profile" && (
               <form onSubmit={submitHandler}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name
-                    </label>
+                <div className="mb-5">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+
+                <div className="mb-5">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none bg-gray-100"
+                    value={email}
+                    disabled
+                  />
+                </div>
+
+                <div className="mb-5">
+                  <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Picture URL
+                  </label>
+                  <input
+                    type="text"
+                    id="profilePicture"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none"
+                    value={profilePicture}
+                    onChange={(e) => setProfilePicture(e.target.value)}
+                    placeholder="Enter image URL"
+                  />
+                </div>
+
+                <div className="mb-5">
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Tell us about yourself"
+                    rows="4"
+                  ></textarea>
+                </div>
+
+                <div className="mb-5">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
                     <input
-                      type="text"
-                      id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none pr-10"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Leave blank to keep current password"
                     />
-                  </div>
-
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                      Bio
-                    </label>
-                    <textarea
-                      id="bio"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      rows="4"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="Tell us about yourself..."
-                    ></textarea>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 mb-1">
-                      Profile Picture URL
-                    </label>
-                    <input
-                      type="text"
-                      id="profilePicture"
-                      value={profilePicture}
-                      onChange={(e) => setProfilePicture(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      placeholder="https://example.com/your-image.jpg"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">Enter a URL for your profile picture</p>
-                  </div>
-
-                  <div className="md:col-span-2">
                     <button
-                      type="submit"
-                      className="btn-primary bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
                     >
-                      Update Profile
+                      <span className="h-5 w-5 text-gray-400">
+                        {showPassword ? "👁️" : "👁️‍🗨️"}
+                      </span>
                     </button>
                   </div>
                 </div>
+
+                <div className="mb-6">
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      id="confirmPassword"
+                      className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none pr-10"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Leave blank to keep current password"
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      <span className="h-5 w-5 text-gray-400">
+                        {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="bg-lime-400 text-black py-3 px-4 rounded-md hover:bg-lime-500 focus:outline-none font-medium"
+                >
+                  Update Profile
+                </button>
               </form>
             )}
 
-            {activeTab === "resume" && (
+            {activeTab === "connections" && (
               <div>
-                <h2 className="text-xl font-semibold mb-4">Resume Management</h2>
-
-                {resume ? (
-                  <div className="mb-6 p-4 border border-gray-200 rounded-md">
-                    <h3 className="font-medium mb-2">Current Resume</h3>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-8 w-8 text-gray-500 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <span>Resume.pdf</span>
+                <h2 className="text-xl font-semibold mb-4">Your Connections</h2>
+                {userProfile?.connections && userProfile.connections.length > 0 ? (
+                  <div className="space-y-4">
+                    {userProfile.connections.map((connection) => (
+                      <div key={connection._id} className="flex items-center p-4 bg-gray-50 rounded-lg">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4 border border-lime-200">
+                          {connection.profilePicture ? (
+                            <img
+                              src={connection.profilePicture || "/placeholder.svg"}
+                              alt={connection.name}
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xl text-gray-500">👤</span>
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{connection.name}</h3>
+                          <p className="text-sm text-gray-600">{connection.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <a
-                          href={resume}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-green-600 hover:underline mr-4"
-                        >
-                          View
-                        </a>
-                        <button onClick={() => setResume("")} className="text-red-600 hover:underline">
-                          Remove
-                        </button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 ) : (
-                  <p className="mb-4 text-gray-600">You haven't uploaded a resume yet.</p>
+                  <p className="text-gray-500 text-center py-8">You don't have any connections yet.</p>
                 )}
-
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="font-medium mb-2">Upload New Resume</h3>
-                  <form onSubmit={handleResumeUpload}>
-                    <div className="mb-4">
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx"
-                        onChange={(e) => setResumeFile(e.target.files[0])}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                      />
-                      <p className="mt-1 text-xs text-gray-500">Accepted formats: PDF, DOC, DOCX</p>
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={uploadingResume || !resumeFile}
-                      className="btn-primary bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                      {uploadingResume ? "Uploading..." : "Upload Resume"}
-                    </button>
-                  </form>
-                </div>
               </div>
             )}
 
-            {activeTab === "security" && (
-              <form onSubmit={submitHandler}>
-                <h2 className="text-xl font-semibold mb-4">Change Password</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
+            {activeTab === "events" && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Your Events</h2>
+                {userProfile?.events && userProfile.events.length > 0 ? (
+                  <div className="space-y-4">
+                    {userProfile.events.map((event) => (
+                      <div key={event._id} className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <h3 className="font-semibold">{event.title}</h3>
+                        <p className="text-sm text-gray-600">
+                          {new Date(event.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-
-                  <div>
-                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      className="btn-primary bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      Update Password
-                    </button>
-                  </div>
-                </div>
-              </form>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">You haven't registered for any events yet.</p>
+                )}
+              </div>
             )}
-          </div>
-        </div>
+
+            {activeTab === "groups" && (
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Your Groups</h2>
+                {userProfile?.groups && userProfile.groups.length > 0 ? (
+                  <div className="space-y-4">
+                    {userProfile.groups.map((group) => (
+                      <div key={group._id} className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                        <h3 className="font-semibold">{group.name}</h3>
+                        <p className="text-sm text-gray-600">{group.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-8">You haven't joined any groups yet.</p>
+                )}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProfilePage
+export default ProfilePage;

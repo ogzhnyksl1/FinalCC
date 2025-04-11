@@ -1,251 +1,263 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-export const getAdminStats = createAsyncThunk("admin/getAdminStats", async (_, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.get("/api/admin/stats", config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const getUsers = createAsyncThunk("admin/getUsers", async (_, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.get("/api/admin/users", config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const getUserById = createAsyncThunk("admin/getUserById", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.get(`/api/admin/users/${id}`, config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const updateUser = createAsyncThunk(
-  "admin/updateUser",
-  async ({ id, ...userData }, { getState, rejectWithValue }) => {
+// Async thunks for admin settings
+export const fetchSystemSettings = createAsyncThunk(
+  "admin/fetchSystemSettings",
+  async (_, { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/admin/users/${id}`, userData, config)
-
-      return data
+      const response = await axios.get("/api/admin/settings")
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
-export const deleteUser = createAsyncThunk("admin/deleteUser", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    await axios.delete(`/api/admin/users/${id}`, config)
-
-    return id
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const resetUserPassword = createAsyncThunk(
-  "admin/resetUserPassword",
-  async ({ id, password }, { getState, rejectWithValue }) => {
+export const updateSystemSettings = createAsyncThunk(
+  "admin/updateSystemSettings",
+  async (settings, { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/admin/users/${id}/reset-password`, { password }, config)
-
-      return data
+      const response = await axios.put("/api/admin/settings", settings)
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
+export const fetchContentRules = createAsyncThunk(
+  "admin/fetchContentRules",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/api/admin/content-rules")
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+export const updateContentRules = createAsyncThunk(
+  "admin/updateContentRules",
+  async (rules, { rejectWithValue }) => {
+    try {
+      const response = await axios.put("/api/admin/content-rules", rules)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+export const fetchUserRoles = createAsyncThunk(
+  "admin/fetchUserRoles",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/api/admin/user-roles")
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+export const updateUserRole = createAsyncThunk(
+  "admin/updateUserRole",
+  async ({ userId, role }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`/api/admin/users/${userId}/role`, { role })
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+export const fetchPlugins = createAsyncThunk(
+  "admin/fetchPlugins",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axios.get("/api/admin/plugins")
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+export const togglePlugin = createAsyncThunk(
+  "admin/togglePlugin",
+  async ({ pluginId, enabled }, { rejectWithValue }) => {
+    try {
+      const response = await axios.put(`/api/admin/plugins/${pluginId}`, { enabled })
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+// Initial state
 const initialState = {
-  stats: null,
-  users: [],
-  user: null,
+  systemSettings: {
+    platformName: "",
+    logoUrl: "",
+    primaryColor: "#3f51b5",
+    secondaryColor: "#f50057",
+    contactEmail: "",
+    maxUploadSize: 5,
+    allowUserRegistration: true,
+    requireEmailVerification: true,
+    autoApproveContent: false
+  },
+  contentRules: {
+    allowedMediaTypes: [],
+    prohibitedKeywords: [],
+    contentReviewEnabled: true,
+    autoApproveUsers: [],
+    flagThreshold: 3
+  },
+  userRoles: [],
+  plugins: [],
   loading: false,
   error: null,
-  success: false,
+  successMessage: null
 }
 
+// Create slice
 const adminSlice = createSlice({
   name: "admin",
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearAdminMessages: (state) => {
       state.error = null
-    },
-    resetSuccess: (state) => {
-      state.success = false
+      state.successMessage = null
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getAdminStats.pending, (state) => {
+      // Fetch system settings
+      .addCase(fetchSystemSettings.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getAdminStats.fulfilled, (state, action) => {
+      .addCase(fetchSystemSettings.fulfilled, (state, action) => {
         state.loading = false
-        state.stats = action.payload
-        state.error = null
+        state.systemSettings = action.payload
       })
-      .addCase(getAdminStats.rejected, (state, action) => {
+      .addCase(fetchSystemSettings.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
+        state.error = action.payload?.message || "Failed to fetch system settings"
       })
-      .addCase(getUsers.pending, (state) => {
+      
+      // Update system settings
+      .addCase(updateSystemSettings.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getUsers.fulfilled, (state, action) => {
+      .addCase(updateSystemSettings.fulfilled, (state, action) => {
         state.loading = false
-        state.users = action.payload
-        state.error = null
+        state.systemSettings = action.payload
+        state.successMessage = "System settings updated successfully"
       })
-      .addCase(getUsers.rejected, (state, action) => {
+      .addCase(updateSystemSettings.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
+        state.error = action.payload?.message || "Failed to update system settings"
       })
-      .addCase(getUserById.pending, (state) => {
+      
+      // Fetch content rules
+      .addCase(fetchContentRules.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getUserById.fulfilled, (state, action) => {
+      .addCase(fetchContentRules.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload
-        state.error = null
+        state.contentRules = action.payload
       })
-      .addCase(getUserById.rejected, (state, action) => {
+      .addCase(fetchContentRules.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
+        state.error = action.payload?.message || "Failed to fetch content rules"
       })
-      .addCase(updateUser.pending, (state) => {
+      
+      // Update content rules
+      .addCase(updateContentRules.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
-      .addCase(updateUser.fulfilled, (state, action) => {
+      .addCase(updateContentRules.fulfilled, (state, action) => {
         state.loading = false
-        state.users = state.users.map((user) => (user._id === action.payload._id ? action.payload : user))
-        state.user = action.payload
-        state.success = true
-        state.error = null
+        state.contentRules = action.payload
+        state.successMessage = "Content rules updated successfully"
       })
-      .addCase(updateUser.rejected, (state, action) => {
+      .addCase(updateContentRules.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
-        state.success = false
+        state.error = action.payload?.message || "Failed to update content rules"
       })
-      .addCase(deleteUser.pending, (state) => {
+      
+      // Fetch user roles
+      .addCase(fetchUserRoles.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
-      .addCase(deleteUser.fulfilled, (state, action) => {
+      .addCase(fetchUserRoles.fulfilled, (state, action) => {
         state.loading = false
-        state.users = state.users.filter((user) => user._id !== action.payload)
-        state.success = true
-        state.error = null
+        state.userRoles = action.payload
       })
-      .addCase(deleteUser.rejected, (state, action) => {
+      .addCase(fetchUserRoles.rejected, (state, action) => {
         state.loading = false
-        state.error = action.payload
-        state.success = false
+        state.error = action.payload?.message || "Failed to fetch user roles"
       })
-      .addCase(resetUserPassword.pending, (state) => {
+      
+      // Update user role
+      .addCase(updateUserRole.pending, (state) => {
         state.loading = true
         state.error = null
-        state.success = false
       })
-      .addCase(resetUserPassword.fulfilled, (state, action) => {
+      .addCase(updateUserRole.fulfilled, (state, action) => {
         state.loading = false
-        state.success = true
+        state.userRoles = state.userRoles.map(user => 
+          user._id === action.payload._id ? action.payload : user
+        )
+        state.successMessage = "User role updated successfully"
+      })
+      .addCase(updateUserRole.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message || "Failed to update user role"
+      })
+      
+      // Fetch plugins
+      .addCase(fetchPlugins.pending, (state) => {
+        state.loading = true
         state.error = null
       })
-      .addCase(resetUserPassword.rejected, (state, action) => {
+      .addCase(fetchPlugins.fulfilled, (state, action) => {
         state.loading = false
-        state.error = action.payload
-        state.success = false
+        state.plugins = action.payload
+      })
+      .addCase(fetchPlugins.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message || "Failed to fetch plugins"
+      })
+      
+      // Toggle plugin
+      .addCase(togglePlugin.pending, (state) => {
+        state.loading = true
+        state.error = null
+      })
+      .addCase(togglePlugin.fulfilled, (state, action) => {
+        state.loading = false
+        state.plugins = state.plugins.map(plugin => 
+          plugin._id === action.payload._id ? action.payload : plugin
+        )
+        state.successMessage = `Plugin ${action.payload.enabled ? 'enabled' : 'disabled'} successfully`
+      })
+      .addCase(togglePlugin.rejected, (state, action) => {
+        state.loading = false
+        state.error = action.payload?.message || "Failed to toggle plugin"
       })
   },
 })
 
-export const { clearError, resetSuccess } = adminSlice.actions
-
+export const { clearAdminMessages } = adminSlice.actions
 export default adminSlice.reducer
-

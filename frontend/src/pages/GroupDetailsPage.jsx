@@ -1,344 +1,252 @@
-"use client"
-
-import { useState, useEffect } from "react"
-import { Link, useParams, useNavigate } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
-import { getGroupById, joinGroup, leaveGroup, deleteGroup } from "../slices/communitySlice"
-import { getPosts, createPost } from "../slices/postSlice"
-import Loader from "../components/Loader"
-import Message from "../components/Message"
-import PostCard from "../components/PostCard"
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
+import Loader from "../components/Loader";
+import Message from "../components/Message";
+import PostCard from "../components/PostCard";
+import '../styles/GroupDetailsPage.css';
 
 const GroupDetailsPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
+  const { id } = useParams();
+  const dispatch = useDispatch();
 
-  const [showCreatePost, setShowCreatePost] = useState(false)
-  const [postTitle, setPostTitle] = useState("")
-  const [postContent, setPostContent] = useState("")
-  const [isAnnouncement, setIsAnnouncement] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [group, setGroup] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [showPostForm, setShowPostForm] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const { loading, error, group, success, message } = useSelector((state) => state.communities)
-  const { posts, loading: postsLoading, error: postsError } = useSelector((state) => state.posts)
-  const { userInfo, userProfile } = useSelector((state) => state.auth)
-
-  useEffect(() => {
-    dispatch(getGroupById(id))
-    dispatch(getPosts({ group: id }))
-  }, [dispatch, id])
+  const { userInfo } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    if (success && message === "Group deleted successfully") {
-      navigate(`/communities/${group?.community?._id}`)
+    const fetchGroup = async () => {
+      try {
+        setLoading(true);
+        const config = {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        };
+        const { data } = await axios.get(`/api/groups/${id}`, config);
+        setGroup(data);
+        setLoading(false);
+      } catch (err) {
+        setError(
+          err.response && err.response.data.message
+            ? err.response.data.message
+            : err.message
+        );
+        setLoading(false);
+      }
+    };
+
+    fetchGroup();
+  }, [id, userInfo.token, success]);
+
+  const handlePostSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(
+        `/api/groups/${id}/posts`,
+        { title: postTitle, content: postContent },
+        config
+      );
+      setPostTitle("");
+      setPostContent("");
+      setShowPostForm(false);
+      setSuccess(!success);
+    } catch (err) {
+      setError(
+        err.response && err.response.data.message
+          ? err.response.data.message
+          : err.message
+      );
     }
-  }, [success, message, navigate, group])
+  };
 
-  const handleJoinGroup = () => {
-    dispatch(joinGroup(id))
-  }
+  const handleJoinGroup = async () => {
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.put(`/api/groups/${id}/join`, {}, config);
+      setSuccess(!success);
+    } catch (err) {
+      setError(
+        err.response && err.response.data.message
+          ? err.response.data.message
+          : err.message
+      );
+    }
+  };
 
-  const handleLeaveGroup = () => {
-    dispatch(leaveGroup(id))
-  }
-
-  const handleDeleteGroup = () => {
-    dispatch(deleteGroup(id))
-  }
-
-  const handleCreatePost = (e) => {
-    e.preventDefault()
-    dispatch(
-      createPost({
-        title: postTitle,
-        content: postContent,
-        group: id,
-        isAnnouncement,
-      }),
-    )
-    setPostTitle("")
-    setPostContent("")
-    setIsAnnouncement(false)
-    setShowCreatePost(false)
-  }
-
-  const isUserInGroup = () => {
-    return group?.members.some((member) => member._id === userInfo?._id)
-  }
-
-  const isUserManager = () => {
-    return group?.managers.some((manager) => manager._id === userInfo?._id)
-  }
-
-  const isUserCommunityManager = () => {
-    return group?.community?.managers.some((manager) => manager._id === userInfo?._id)
-  }
-
-  const isAdmin = userInfo?.role === "admin"
-  const canManage = isUserManager() || isUserCommunityManager() || isAdmin
-
-  // Filter group posts
-  const groupPosts = posts?.filter((post) => post.group?._id === id)
-  const announcements = groupPosts?.filter((post) => post.isAnnouncement)
-  const regularPosts = groupPosts?.filter((post) => !post.isAnnouncement)
+  const isManager = group?.managers?.some((manager) => manager._id === userInfo._id);
+  const isAdmin = userInfo?.role === "admin";
+  const isCommunityManager = userInfo?.role === "communityManager";
+  const canManage = isManager || isAdmin || isCommunityManager;
+  const isMember = group?.members?.some((member) => member._id === userInfo._id);
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-6">
+        {group?.community && (
+          <Link
+            to={`/communities/${group.community._id}`}
+            className="text-green-600 hover:underline flex items-center"
+          >
+            <span className="mr-2">←</span> Back to {group.community.name}
+          </Link>
+        )}
+      </div>
+
       {loading ? (
         <Loader />
       ) : error ? (
-        <Message variant="error">{error}</Message>
+        <Message variant="error" onClose={() => setError(null)}>
+          {error}
+        </Message>
       ) : group ? (
-        <div>
-          {success && message && <Message variant="success">{message}</Message>}
-
-          {/* Group Header */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-            {group.image ? (
-              <div className="h-48 w-full bg-cover bg-center" style={{ backgroundImage: `url(${group.image})` }}>
-                <div className="h-full w-full bg-black bg-opacity-30 flex items-end p-6">
-                  <h1 className="text-3xl font-bold text-white">{group.name}</h1>
+        <>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+            <div className="h-48 bg-gray-200">
+              {group.image ? (
+                <img
+                  src={group.image || "/placeholder.svg"}
+                  alt={group.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-green-100 text-green-600">
+                  <span className="text-6xl">👨‍👩‍👧‍👦</span>
                 </div>
-              </div>
-            ) : (
-              <div className="h-48 w-full bg-gradient-to-r from-green-600 to-green-800 flex items-end p-6">
-                <h1 className="text-3xl font-bold text-white">{group.name}</h1>
-              </div>
-            )}
-
+              )}
+            </div>
             <div className="p-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
-                <div>
-                  <div className="flex items-center mb-2">
-                    <span className="text-gray-600 mr-4">
-                      {group.members?.length || 0} {group.members?.length === 1 ? "member" : "members"}
-                    </span>
-                    <span className="flex items-center text-gray-600">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 mr-1 text-green-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      <Link to={`/communities/${group.community?._id}`} className="hover:text-green-600">
-                        {group.community?.name}
-                      </Link>
-                    </span>
-                  </div>
-                  {group.isPrivate && (
-                    <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">Private</span>
-                  )}
+              <h1 className="text-3xl font-bold mb-2 text-gray-800">{group.name}</h1>
+              <p className="text-gray-600 mb-4">{group.description}</p>
+              <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <span className="mr-1">👥</span>
+                  <span>{group.members?.length || 0} members</span>
                 </div>
-
-                <div className="mt-4 md:mt-0">
-                  {userInfo ? (
-                    isUserInGroup() ? (
-                      <button
-                        onClick={handleLeaveGroup}
-                        className="bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
-                      >
-                        Leave Group
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleJoinGroup}
-                        className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                      >
-                        Join Group
-                      </button>
-                    )
-                  ) : (
-                    <Link
-                      to="/login"
-                      className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      Log in to Join
-                    </Link>
-                  )}
+                <div className="flex items-center">
+                  <span className="mr-1">📝</span>
+                  <span>{group.posts?.length || 0} posts</span>
                 </div>
               </div>
-
-              <p className="text-gray-700 mb-4">{group.description}</p>
-
-              {canManage && (
-                <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
-                  <Link
-                    to={`/community-manager/groups/edit/${group._id}`}
-                    className="bg-green-600 text-white py-1 px-3 rounded-md text-sm hover:bg-green-700 transition-colors"
-                  >
-                    Edit Group
-                  </Link>
-                  <Link
-                    to={`/community-manager/groups/managers/${group._id}`}
-                    className="bg-green-600 text-white py-1 px-3 rounded-md text-sm hover:bg-green-700 transition-colors"
-                  >
-                    Manage Members
-                  </Link>
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="bg-red-600 text-white py-1 px-3 rounded-md text-sm hover:bg-red-700 transition-colors"
-                  >
-                    Delete Group
-                  </button>
-                </div>
+              {!isMember && (
+                <button
+                  onClick={handleJoinGroup}
+                  className="mt-4 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Join Group
+                </button>
               )}
             </div>
           </div>
 
-          {/* Group Content */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="flex border-b border-gray-200">
-              <button className="py-3 px-4 font-medium border-b-2 border-green-600 text-green-600">Posts</button>
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-800">
+                {group.pinnedPosts?.length > 0 ? "Pinned Posts" : "Posts"}
+              </h2>
+              {isMember && (
+                <button
+                  onClick={() => setShowPostForm(!showPostForm)}
+                  className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
+                >
+                  <span className="mr-2">{showPostForm ? "-" : "+"}</span>
+                  {showPostForm ? "Cancel" : "Create Post"}
+                </button>
+              )}
             </div>
 
-            <div className="p-6">
-              <div>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold">Group Posts</h2>
-                  {isUserInGroup() && (
-                    <button
-                      onClick={() => setShowCreatePost(!showCreatePost)}
-                      className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      {showCreatePost ? "Cancel" : "Create Post"}
-                    </button>
-                  )}
-                </div>
-
-                {/* Create Post Form */}
-                {showCreatePost && (
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                    <form onSubmit={handleCreatePost}>
-                      <div className="mb-4">
-                        <label htmlFor="postTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                          Title
-                        </label>
-                        <input
-                          type="text"
-                          id="postTitle"
-                          value={postTitle}
-                          onChange={(e) => setPostTitle(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                          required
-                        />
-                      </div>
-
-                      <div className="mb-4">
-                        <label htmlFor="postContent" className="block text-sm font-medium text-gray-700 mb-1">
-                          Content
-                        </label>
-                        <textarea
-                          id="postContent"
-                          value={postContent}
-                          onChange={(e) => setPostContent(e.target.value)}
-                          rows="4"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                          required
-                        ></textarea>
-                      </div>
-
-                      {canManage && (
-                        <div className="mb-4">
-                          <label className="inline-flex items-center">
-                            <input
-                              type="checkbox"
-                              checked={isAnnouncement}
-                              onChange={() => setIsAnnouncement(!isAnnouncement)}
-                              className="form-checkbox h-5 w-5 text-green-600"
-                            />
-                            <span className="ml-2 text-gray-700">Post as announcement</span>
-                          </label>
-                        </div>
-                      )}
-
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors"
-                        >
-                          Post
-                        </button>
-                      </div>
-                    </form>
+            {showPostForm && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4">Create a New Post</h3>
+                <form onSubmit={handlePostSubmit}>
+                  <div className="mb-4">
+                    <label htmlFor="postTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                      Title
+                    </label>
+                    <input
+                      type="text"
+                      id="postTitle"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      value={postTitle}
+                      onChange={(e) => setPostTitle(e.target.value)}
+                      required
+                    />
                   </div>
-                )}
-
-                {/* Announcements */}
-                {announcements && announcements.length > 0 && (
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-3">Announcements</h3>
-                    <div className="space-y-4">
-                      {announcements.map((post) => (
-                        <PostCard key={post._id} post={post} />
-                      ))}
-                    </div>
+                  <div className="mb-4">
+                    <label htmlFor="postContent" className="block text-sm font-medium text-gray-700 mb-1">
+                      Content
+                    </label>
+                    <textarea
+                      id="postContent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                      rows="4"
+                      value={postContent}
+                      onChange={(e) => setPostContent(e.target.value)}
+                      required
+                    ></textarea>
                   </div>
-                )}
-
-                {/* Regular Posts */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Discussions</h3>
-                  {postsLoading ? (
-                    <Loader />
-                  ) : postsError ? (
-                    <Message variant="error">{postsError}</Message>
-                  ) : regularPosts && regularPosts.length > 0 ? (
-                    <div className="space-y-6">
-                      {regularPosts.map((post) => (
-                        <PostCard key={post._id} post={post} />
-                      ))}
-                    </div>
-                  ) : (
-                    <Message variant="info">No posts in this group yet. Be the first to post!</Message>
-                  )}
-                </div>
+                  <button
+                    type="submit"
+                    className="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Post
+                  </button>
+                </form>
               </div>
-            </div>
+            )}
+
+            {group.pinnedPosts?.length > 0 && (
+              <div className="space-y-4 mb-8">
+                {group.pinnedPosts.map((post) => (
+                  <div key={post._id} className="border-l-4 border-green-500">
+                    <PostCard post={post} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {group.pinnedPosts?.length > 0 && group.posts?.length > 0 && (
+              <h2 className="text-xl font-bold text-gray-800 mb-6">All Posts</h2>
+            )}
+
+            {group.posts?.length > 0 ? (
+              <div className="space-y-4">
+                {group.posts
+                  .filter(
+                    (post) =>
+                      !group.pinnedPosts?.some((pinnedPost) => pinnedPost._id === post._id)
+                  )
+                  .map((post) => (
+                    <PostCard key={post._id} post={post} />
+                  ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-8">No posts in this group yet.</p>
+            )}
           </div>
-        </div>
+        </>
       ) : (
         <Message variant="error">Group not found</Message>
       )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold mb-4">Delete Group</h2>
-            <p className="mb-6">
-              Are you sure you want to delete this group? This action cannot be undone and will remove all posts within
-              the group.
-            </p>
-
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteGroup}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
+  );
+};
 
-export default GroupDetailsPage
-
+export default GroupDetailsPage;

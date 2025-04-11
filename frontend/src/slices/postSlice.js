@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-export const getPosts = createAsyncThunk("posts/getPosts", async (params, { getState, rejectWithValue }) => {
+export const getFeaturedPosts = createAsyncThunk("posts/getFeaturedPosts", async (_, { getState, rejectWithValue }) => {
   try {
     const {
       auth: { userInfo },
@@ -11,10 +11,9 @@ export const getPosts = createAsyncThunk("posts/getPosts", async (params, { getS
       headers: {
         Authorization: `Bearer ${userInfo.token}`,
       },
-      params,
     }
 
-    const { data } = await axios.get("/api/posts", config)
+    const { data } = await axios.get("/api/posts/featured", config)
 
     return data
   } catch (error) {
@@ -42,73 +41,6 @@ export const getPostById = createAsyncThunk("posts/getPostById", async (id, { ge
   }
 })
 
-export const createPost = createAsyncThunk("posts/createPost", async (postData, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.post("/api/posts", postData, config)
-
-    return data
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const updatePost = createAsyncThunk(
-  "posts/updatePost",
-  async ({ id, postData }, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/posts/${id}`, postData, config)
-
-      return data
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const deletePost = createAsyncThunk("posts/deletePost", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    await axios.delete(`/api/posts/${id}`, config)
-
-    return id
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
 export const upvotePost = createAsyncThunk("posts/upvotePost", async (id, { getState, rejectWithValue }) => {
   try {
     const {
@@ -123,15 +55,15 @@ export const upvotePost = createAsyncThunk("posts/upvotePost", async (id, { getS
 
     const { data } = await axios.put(`/api/posts/${id}/upvote`, {}, config)
 
-    return data
+    return { id, upvotes: data.upvotes }
   } catch (error) {
     return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
   }
 })
 
-export const addComment = createAsyncThunk(
-  "posts/addComment",
-  async ({ id, content }, { getState, rejectWithValue }) => {
+export const commentOnPost = createAsyncThunk(
+  "posts/commentOnPost",
+  async ({ id, text }, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -144,60 +76,9 @@ export const addComment = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.post(`/api/posts/${id}/comments`, { content }, config)
+      const { data } = await axios.post(`/api/posts/${id}/comments`, { text }, config)
 
-      return { postId: id, comment: data }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const updateComment = createAsyncThunk(
-  "posts/updateComment",
-  async ({ postId, commentId, content }, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.put(`/api/posts/${postId}/comments/${commentId}`, { content }, config)
-
-      return { postId, commentId, updatedComment: data }
-    } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
-    }
-  },
-)
-
-export const deleteComment = createAsyncThunk(
-  "posts/deleteComment",
-  async ({ postId, commentId }, { getState, rejectWithValue }) => {
-    try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      await axios.delete(`/api/posts/${postId}/comments/${commentId}`, config)
-
-      return { postId, commentId }
+      return { id, comments: data }
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -207,7 +88,7 @@ export const deleteComment = createAsyncThunk(
 )
 
 const initialState = {
-  posts: [],
+  featuredPosts: [],
   post: null,
   loading: false,
   error: null,
@@ -227,16 +108,16 @@ const postSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getPosts.pending, (state) => {
+      .addCase(getFeaturedPosts.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(getPosts.fulfilled, (state, action) => {
+      .addCase(getFeaturedPosts.fulfilled, (state, action) => {
         state.loading = false
-        state.posts = action.payload
+        state.featuredPosts = action.payload
         state.error = null
       })
-      .addCase(getPosts.rejected, (state, action) => {
+      .addCase(getFeaturedPosts.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
@@ -253,116 +134,36 @@ const postSlice = createSlice({
         state.loading = false
         state.error = action.payload
       })
-      .addCase(createPost.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(createPost.fulfilled, (state, action) => {
-        state.loading = false
-        state.posts.unshift(action.payload)
-        state.success = true
-        state.error = null
-      })
-      .addCase(createPost.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(updatePost.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(updatePost.fulfilled, (state, action) => {
-        state.loading = false
-        state.posts = state.posts.map((post) => (post._id === action.payload._id ? action.payload : post))
-        state.post = action.payload
-        state.success = true
-        state.error = null
-      })
-      .addCase(updatePost.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
-      .addCase(deletePost.pending, (state) => {
-        state.loading = true
-        state.error = null
-        state.success = false
-      })
-      .addCase(deletePost.fulfilled, (state, action) => {
-        state.loading = false
-        state.posts = state.posts.filter((post) => post._id !== action.payload)
-        state.post = null
-        state.success = true
-        state.error = null
-      })
-      .addCase(deletePost.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-        state.success = false
-      })
       .addCase(upvotePost.pending, (state) => {
         state.loading = true
         state.error = null
       })
       .addCase(upvotePost.fulfilled, (state, action) => {
         state.loading = false
-        state.posts = state.posts.map((post) => (post._id === action.payload._id ? action.payload : post))
-        if (state.post && state.post._id === action.payload._id) {
-          state.post = action.payload
+        if (state.post && state.post._id === action.payload.id) {
+          state.post.upvotes = action.payload.upvotes
         }
+        state.featuredPosts = state.featuredPosts.map((post) =>
+          post._id === action.payload.id ? { ...post, upvotes: action.payload.upvotes } : post,
+        )
         state.error = null
       })
       .addCase(upvotePost.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      .addCase(addComment.pending, (state) => {
+      .addCase(commentOnPost.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(addComment.fulfilled, (state, action) => {
+      .addCase(commentOnPost.fulfilled, (state, action) => {
         state.loading = false
-        if (state.post && state.post._id === action.payload.postId) {
-          state.post.comments.push(action.payload.comment)
+        if (state.post && state.post._id === action.payload.id) {
+          state.post.comments = action.payload.comments
         }
         state.error = null
       })
-      .addCase(addComment.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
-      .addCase(updateComment.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(updateComment.fulfilled, (state, action) => {
-        state.loading = false
-        if (state.post && state.post._id === action.payload.postId) {
-          state.post.comments = state.post.comments.map((comment) =>
-            comment._id === action.payload.commentId ? action.payload.updatedComment : comment,
-          )
-        }
-        state.error = null
-      })
-      .addCase(updateComment.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
-      .addCase(deleteComment.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(deleteComment.fulfilled, (state, action) => {
-        state.loading = false
-        if (state.post && state.post._id === action.payload.postId) {
-          state.post.comments = state.post.comments.filter((comment) => comment._id !== action.payload.commentId)
-        }
-        state.error = null
-      })
-      .addCase(deleteComment.rejected, (state, action) => {
+      .addCase(commentOnPost.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })

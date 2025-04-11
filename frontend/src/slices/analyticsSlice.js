@@ -1,187 +1,226 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import axios from "axios"
 
-export const getPlatformOverview = createAsyncThunk(
-  "analytics/getPlatformOverview",
-  async (_, { getState, rejectWithValue }) => {
+// Async thunks for analytics
+export const fetchUserStats = createAsyncThunk(
+  "analytics/fetchUserStats",
+  async (period = "month", { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.get("/api/analytics/overview", config)
-
-      return data
+      const response = await axios.get(`/api/analytics/users?period=${period}`)
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
-export const getCommunityAnalytics = createAsyncThunk(
-  "analytics/getCommunityAnalytics",
-  async (communityId, { getState, rejectWithValue }) => {
+export const fetchEngagementStats = createAsyncThunk(
+  "analytics/fetchEngagementStats",
+  async (period = "month", { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.get(`/api/analytics/communities/${communityId}`, config)
-
-      return data
+      const response = await axios.get(`/api/analytics/engagement?period=${period}`)
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
-export const getEventAnalytics = createAsyncThunk(
-  "analytics/getEventAnalytics",
-  async (eventId, { getState, rejectWithValue }) => {
+export const fetchCommunityStats = createAsyncThunk(
+  "analytics/fetchCommunityStats",
+  async (period = "month", { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.get(`/api/analytics/events/${eventId}`, config)
-
-      return data
+      const response = await axios.get(`/api/analytics/communities?period=${period}`)
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
-export const getUserAnalytics = createAsyncThunk(
-  "analytics/getUserAnalytics",
-  async (_, { getState, rejectWithValue }) => {
+export const fetchEventStats = createAsyncThunk(
+  "analytics/fetchEventStats",
+  async (period = "month", { rejectWithValue }) => {
     try {
-      const {
-        auth: { userInfo },
-      } = getState()
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      }
-
-      const { data } = await axios.get("/api/analytics/users", config)
-
-      return data
+      const response = await axios.get(`/api/analytics/events?period=${period}`)
+      return response.data
     } catch (error) {
-      return rejectWithValue(
-        error.response && error.response.data.message ? error.response.data.message : error.message,
-      )
+      return rejectWithValue(error.response.data)
     }
-  },
+  }
 )
 
+export const fetchContentStats = createAsyncThunk(
+  "analytics/fetchContentStats",
+  async (period = "month", { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`/api/analytics/content?period=${period}`)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response.data)
+    }
+  }
+)
+
+// Initial state
 const initialState = {
-  platformOverview: null,
-  communityAnalytics: null,
-  eventAnalytics: null,
-  userAnalytics: null,
-  loading: false,
-  error: null,
+  userStats: {
+    totalUsers: 0,
+    activeUsers: 0,
+    newUsers: [],
+    registrationsByDay: [],
+    usersByRole: [],
+    loading: false,
+    error: null
+  },
+  engagementStats: {
+    totalActions: 0,
+    actionsPerDay: [],
+    actionsPerUser: 0,
+    popularHours: [],
+    retentionRate: 0,
+    loading: false,
+    error: null
+  },
+  communityStats: {
+    totalCommunities: 0,
+    activeCommunities: 0,
+    communitiesBySize: [],
+    communitiesByActivity: [],
+    newCommunities: [],
+    loading: false,
+    error: null
+  },
+  eventStats: {
+    totalEvents: 0,
+    upcomingEvents: 0,
+    pastEvents: 0,
+    eventsByAttendance: [],
+    eventsByType: [],
+    loading: false,
+    error: null
+  },
+  contentStats: {
+    totalPosts: 0,
+    postsPerDay: [],
+    popularTags: [],
+    contentByType: [],
+    loading: false, 
+    error: null
+  }
 }
 
+// Create slice
 const analyticsSlice = createSlice({
   name: "analytics",
   initialState,
   reducers: {
-    clearError: (state) => {
-      state.error = null
-    },
-    resetAnalytics: (state) => {
-      state.platformOverview = null
-      state.communityAnalytics = null
-      state.eventAnalytics = null
-      state.userAnalytics = null
+    clearAnalyticsErrors: (state) => {
+      state.userStats.error = null
+      state.engagementStats.error = null
+      state.communityStats.error = null
+      state.eventStats.error = null
+      state.contentStats.error = null
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getPlatformOverview.pending, (state) => {
-        state.loading = true
-        state.error = null
+      // User stats
+      .addCase(fetchUserStats.pending, (state) => {
+        state.userStats.loading = true
+        state.userStats.error = null
       })
-      .addCase(getPlatformOverview.fulfilled, (state, action) => {
-        state.loading = false
-        state.platformOverview = action.payload
-        state.error = null
+      .addCase(fetchUserStats.fulfilled, (state, action) => {
+        state.userStats.loading = false
+        state.userStats = {
+          ...state.userStats,
+          ...action.payload,
+          loading: false,
+          error: null
+        }
       })
-      .addCase(getPlatformOverview.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+      .addCase(fetchUserStats.rejected, (state, action) => {
+        state.userStats.loading = false
+        state.userStats.error = action.payload?.message || "Failed to fetch user statistics"
       })
-      .addCase(getCommunityAnalytics.pending, (state) => {
-        state.loading = true
-        state.error = null
+      
+      // Engagement stats
+      .addCase(fetchEngagementStats.pending, (state) => {
+        state.engagementStats.loading = true
+        state.engagementStats.error = null
       })
-      .addCase(getCommunityAnalytics.fulfilled, (state, action) => {
-        state.loading = false
-        state.communityAnalytics = action.payload
-        state.error = null
+      .addCase(fetchEngagementStats.fulfilled, (state, action) => {
+        state.engagementStats.loading = false
+        state.engagementStats = {
+          ...state.engagementStats,
+          ...action.payload,
+          loading: false,
+          error: null
+        }
       })
-      .addCase(getCommunityAnalytics.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+      .addCase(fetchEngagementStats.rejected, (state, action) => {
+        state.engagementStats.loading = false
+        state.engagementStats.error = action.payload?.message || "Failed to fetch engagement statistics"
       })
-      .addCase(getEventAnalytics.pending, (state) => {
-        state.loading = true
-        state.error = null
+      
+      // Community stats
+      .addCase(fetchCommunityStats.pending, (state) => {
+        state.communityStats.loading = true
+        state.communityStats.error = null
       })
-      .addCase(getEventAnalytics.fulfilled, (state, action) => {
-        state.loading = false
-        state.eventAnalytics = action.payload
-        state.error = null
+      .addCase(fetchCommunityStats.fulfilled, (state, action) => {
+        state.communityStats.loading = false
+        state.communityStats = {
+          ...state.communityStats,
+          ...action.payload,
+          loading: false,
+          error: null
+        }
       })
-      .addCase(getEventAnalytics.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+      .addCase(fetchCommunityStats.rejected, (state, action) => {
+        state.communityStats.loading = false
+        state.communityStats.error = action.payload?.message || "Failed to fetch community statistics"
       })
-      .addCase(getUserAnalytics.pending, (state) => {
-        state.loading = true
-        state.error = null
+      
+      // Event stats
+      .addCase(fetchEventStats.pending, (state) => {
+        state.eventStats.loading = true
+        state.eventStats.error = null
       })
-      .addCase(getUserAnalytics.fulfilled, (state, action) => {
-        state.loading = false
-        state.userAnalytics = action.payload
-        state.error = null
+      .addCase(fetchEventStats.fulfilled, (state, action) => {
+        state.eventStats.loading = false
+        state.eventStats = {
+          ...state.eventStats,
+          ...action.payload,
+          loading: false,
+          error: null
+        }
       })
-      .addCase(getUserAnalytics.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+      .addCase(fetchEventStats.rejected, (state, action) => {
+        state.eventStats.loading = false
+        state.eventStats.error = action.payload?.message || "Failed to fetch event statistics"
+      })
+      
+      // Content stats
+      .addCase(fetchContentStats.pending, (state) => {
+        state.contentStats.loading = true
+        state.contentStats.error = null
+      })
+      .addCase(fetchContentStats.fulfilled, (state, action) => {
+        state.contentStats.loading = false
+        state.contentStats = {
+          ...state.contentStats,
+          ...action.payload,
+          loading: false,
+          error: null
+        }
+      })
+      .addCase(fetchContentStats.rejected, (state, action) => {
+        state.contentStats.loading = false
+        state.contentStats.error = action.payload?.message || "Failed to fetch content statistics"
       })
   },
 })
 
-export const { clearError, resetAnalytics } = analyticsSlice.actions
-
+export const { clearAnalyticsErrors } = analyticsSlice.actions
 export default analyticsSlice.reducer
-

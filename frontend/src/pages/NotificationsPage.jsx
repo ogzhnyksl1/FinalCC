@@ -1,87 +1,69 @@
-"use client"
-
-import { useEffect } from "react"
-import { Link } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux"
-import { getNotifications, markAsRead, markAllAsRead } from "../slices/notificationSlice"
-import Loader from "../components/Loader"
-import Message from "../components/Message"
-import { formatDate } from "../utils/formatDate"
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getNotifications, markNotificationAsRead, clearError } from "../slices/notificationSlice";
+import Loader from "../components/Loader";
+import Message from "../components/Message";
+import { formatDistanceToNow } from "../utils/formatDate";
+import "../styles/NotificationsPage.css";
 
 const NotificationsPage = () => {
-  const dispatch = useDispatch()
-
-  const { loading, error, notifications } = useSelector((state) => state.notifications)
+  const dispatch = useDispatch();
+  const { notifications, loading, error } = useSelector((state) => state.notifications);
 
   useEffect(() => {
-    dispatch(getNotifications())
-  }, [dispatch])
+    dispatch(getNotifications());
+  }, [dispatch]);
 
-  const handleMarkAsRead = (id) => {
-    dispatch(markAsRead(id))
-  }
-
-  const handleMarkAllAsRead = () => {
-    dispatch(markAllAsRead())
-  }
-
-  const unreadCount = notifications?.filter((notification) => !notification.read).length || 0
+  const handleNotificationClick = (notification) => {
+    if (!notification.read) {
+      dispatch(markNotificationAsRead(notification._id));
+    }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-green-600">Notifications</h1>
-          {unreadCount > 0 && (
-            <button onClick={handleMarkAllAsRead} className="text-green-600 hover:text-green-700 font-medium">
-              Mark All as Read
-            </button>
-          )}
-        </div>
+    <div className="min-h-screen flex justify-center bg-gray-100 py-6">
+      <div className="w-full max-w-3xl bg-white shadow-lg rounded-lg p-6 border border-gray-300 mt-4">
+        <h1 className="text-3xl font-bold text-green-600 mb-6 text-center">Notifications</h1>
 
         {loading ? (
           <Loader />
         ) : error ? (
-          <Message variant="error">{error}</Message>
+          <Message variant="error" onClose={() => dispatch(clearError())}>
+            {error}
+          </Message>
         ) : notifications && notifications.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <ul className="divide-y divide-gray-200">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="divide-y divide-gray-100">
               {notifications.map((notification) => (
-                <li
+                <div
                   key={notification._id}
-                  className={`p-4 hover:bg-gray-50 ${!notification.read ? "bg-green-50" : ""}`}
+                  className={`p-4 ${notification.read ? "bg-white" : "bg-green-50"}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <Link
-                        to={notification.link}
-                        className="block mb-1"
-                        onClick={() => !notification.read && handleMarkAsRead(notification._id)}
-                      >
-                        <p className="text-gray-800">{notification.message}</p>
-                      </Link>
-                      <p className="text-xs text-gray-500">{formatDate(notification.createdAt)}</p>
-                    </div>
-                    {!notification.read && (
-                      <button
-                        onClick={() => handleMarkAsRead(notification._id)}
-                        className="text-sm text-green-600 hover:text-green-700"
-                      >
-                        Mark as Read
-                      </button>
-                    )}
-                  </div>
-                </li>
+                  <Link
+                    to={notification.link || "#"}
+                    className="block"
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <p className="text-gray-800 mb-1">{notification.message}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDistanceToNow(notification.date)}
+                    </p>
+                  </Link>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
         ) : (
-          <Message variant="info">You have no notifications.</Message>
+          <div className="text-center py-12 bg-white rounded-lg shadow-md border border-gray-200">
+            <div className="text-6xl mb-4">🔔</div>
+            <h2 className="text-2xl font-semibold mb-2">No notifications</h2>
+            <p className="text-gray-600">You don't have any notifications at the moment.</p>
+          </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default NotificationsPage
-
+export default NotificationsPage;

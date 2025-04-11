@@ -1,12 +1,11 @@
 "use client"
-
+import '../styles/RegisterPage.css';
 import { useState, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useDispatch, useSelector } from "react-redux"
-import { register } from "../slices/authSlice"
-import Message from "../components/Message"
+import { register, clearError } from "../slices/authSlice"
 import Loader from "../components/Loader"
-import "../styles/pages/RegisterPage.css"
+import Message from "../components/Message"
 
 const RegisterPage = () => {
   const [name, setName] = useState("")
@@ -14,7 +13,6 @@ const RegisterPage = () => {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [message, setMessage] = useState(null)
-  const [role, setRole] = useState("user") // Default role is user (student)
 
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -27,180 +25,109 @@ const RegisterPage = () => {
     }
   }, [navigate, userInfo])
 
-  const validateEmail = (email) => {
-    const regex = /^[^\s@]+@my\.centennialcollege\.ca$/
-    return regex.test(email)
-  }
-
   const submitHandler = (e) => {
     e.preventDefault()
-
     if (password !== confirmPassword) {
       setMessage("Passwords do not match")
-    } else if (!validateEmail(email)) {
-      setMessage("Please use your Centennial College email (my.centennialcollege.ca)")
+    } else if (!email.endsWith("@my.centennialcollege.ca")) {
+      setMessage("Please use your Centennial College email (@my.centennialcollege.ca)")
     } else {
-      setMessage(null)
-      dispatch(register({ name, email, password, role }))
+      dispatch(register({ name, email, password }))
     }
   }
 
   return (
-    <div className="register-container">
-      <div className="register-card">
-        <div className="register-header">
-          <h1 className="register-title">Create an Account</h1>
-          <p className="register-subtitle">Join the Centennial College community network</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h1 className="text-3xl font-bold mb-6 text-center text-green-600">Sign Up</h1>
+        {message && (
+          <Message variant="error" onClose={() => setMessage(null)}>
+            {message}
+          </Message>
+        )}
+        {error && (
+          <Message variant="error" onClose={() => dispatch(clearError())}>
+            {error}
+          </Message>
+        )}
+        {loading && <Loader />}
+        <form onSubmit={submitHandler}>
+          <div className="mb-4">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+              Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Enter your name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
 
-        <div className="register-body">
-          {message && <Message variant="error">{message}</Message>}
-          {error && <Message variant="error">{error}</Message>}
-          {loading && <Loader />}
+          <div className="mb-4">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Enter your college email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">Must be a Centennial College email (@my.centennialcollege.ca)</p>
+          </div>
 
-          <form onSubmit={submitHandler} className="register-form">
-            <div className="form-group">
-              <label htmlFor="name" className="form-label">
-                Full Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                className="form-control"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
+          <div className="mb-4">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                className="form-control"
-                placeholder="your.id@my.centennialcollege.ca"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <small className="form-text">
-                You must use your Centennial College email address (my.centennialcollege.ca)
-              </small>
-            </div>
+          <div className="mb-6">
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="password" className="form-label">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                className="form-control"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          >
+            Register
+          </button>
+        </form>
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword" className="form-label">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                className="form-control"
-                placeholder="Confirm password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Role Selection */}
-            <div className="form-group">
-              <label className="form-label">I am a:</label>
-              <div className="role-options">
-                <div className="role-option">
-                  <input
-                    type="radio"
-                    id="role-student"
-                    name="role"
-                    value="user"
-                    checked={role === "user"}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="role-radio"
-                  />
-                  <label htmlFor="role-student" className="role-label">
-                    Student
-                  </label>
-                </div>
-
-                <div className="role-option">
-                  <input
-                    type="radio"
-                    id="role-alumni"
-                    name="role"
-                    value="alumni"
-                    checked={role === "alumni"}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="role-radio"
-                  />
-                  <label htmlFor="role-alumni" className="role-label">
-                    Alumni
-                  </label>
-                </div>
-
-                <div className="role-option">
-                  <input
-                    type="radio"
-                    id="role-community-manager"
-                    name="role"
-                    value="communityManager"
-                    checked={role === "communityManager"}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="role-radio"
-                  />
-                  <label htmlFor="role-community-manager" className="role-label">
-                    Community Manager
-                  </label>
-                </div>
-
-                <div className="role-option">
-                  <input
-                    type="radio"
-                    id="role-event-manager"
-                    name="role"
-                    value="eventManager"
-                    checked={role === "eventManager"}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="role-radio"
-                  />
-                  <label htmlFor="role-event-manager" className="role-label">
-                    Event Manager
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <button type="submit" className="btn btn-primary btn-block">
-                Register
-              </button>
-            </div>
-          </form>
-        </div>
-
-        <div className="register-footer">
-          Already have an account?{" "}
-          <Link to="/login" className="register-link">
-            Login
-          </Link>
+        <div className="mt-4 text-center">
+          <p className="text-gray-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-green-600 hover:underline">
+              Sign In
+            </Link>
+          </p>
         </div>
       </div>
     </div>
@@ -208,3 +135,4 @@ const RegisterPage = () => {
 }
 
 export default RegisterPage
+

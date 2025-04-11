@@ -15,9 +15,9 @@ export const getNotifications = createAsyncThunk(
         },
       }
 
-      const { data } = await axios.get("/api/users/notifications", config)
+      const { data } = await axios.get("/api/users/profile", config)
 
-      return data
+      return data.notifications
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -26,29 +26,9 @@ export const getNotifications = createAsyncThunk(
   },
 )
 
-export const markAsRead = createAsyncThunk("notifications/markAsRead", async (id, { getState, rejectWithValue }) => {
-  try {
-    const {
-      auth: { userInfo },
-    } = getState()
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    }
-
-    const { data } = await axios.put(`/api/users/notifications/${id}`, {}, config)
-
-    return { id, notifications: data }
-  } catch (error) {
-    return rejectWithValue(error.response && error.response.data.message ? error.response.data.message : error.message)
-  }
-})
-
-export const markAllAsRead = createAsyncThunk(
-  "notifications/markAllAsRead",
-  async (_, { getState, rejectWithValue }) => {
+export const markNotificationAsRead = createAsyncThunk(
+  "notifications/markNotificationAsRead",
+  async (notificationId, { getState, rejectWithValue }) => {
     try {
       const {
         auth: { userInfo },
@@ -56,13 +36,25 @@ export const markAllAsRead = createAsyncThunk(
 
       const config = {
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${userInfo.token}`,
         },
       }
 
-      const { data } = await axios.put("/api/users/notifications/read-all", {}, config)
+      const { data } = await axios.put(
+        "/api/users/profile",
+        {
+          notifications: [
+            {
+              _id: notificationId,
+              read: true,
+            },
+          ],
+        },
+        config,
+      )
 
-      return data
+      return notificationId
     } catch (error) {
       return rejectWithValue(
         error.response && error.response.data.message ? error.response.data.message : error.message,
@@ -75,7 +67,6 @@ const initialState = {
   notifications: [],
   loading: false,
   error: null,
-  unreadCount: 0,
 }
 
 const notificationSlice = createSlice({
@@ -95,38 +86,24 @@ const notificationSlice = createSlice({
       .addCase(getNotifications.fulfilled, (state, action) => {
         state.loading = false
         state.notifications = action.payload
-        state.unreadCount = action.payload.filter((notification) => !notification.read).length
         state.error = null
       })
       .addCase(getNotifications.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })
-      .addCase(markAsRead.pending, (state) => {
+      .addCase(markNotificationAsRead.pending, (state) => {
         state.loading = true
         state.error = null
       })
-      .addCase(markAsRead.fulfilled, (state, action) => {
+      .addCase(markNotificationAsRead.fulfilled, (state, action) => {
         state.loading = false
-        state.notifications = action.payload.notifications
-        state.unreadCount = action.payload.notifications.filter((notification) => !notification.read).length
+        state.notifications = state.notifications.map((notification) =>
+          notification._id === action.payload ? { ...notification, read: true } : notification,
+        )
         state.error = null
       })
-      .addCase(markAsRead.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
-      })
-      .addCase(markAllAsRead.pending, (state) => {
-        state.loading = true
-        state.error = null
-      })
-      .addCase(markAllAsRead.fulfilled, (state, action) => {
-        state.loading = false
-        state.notifications = action.payload
-        state.unreadCount = 0
-        state.error = null
-      })
-      .addCase(markAllAsRead.rejected, (state, action) => {
+      .addCase(markNotificationAsRead.rejected, (state, action) => {
         state.loading = false
         state.error = action.payload
       })

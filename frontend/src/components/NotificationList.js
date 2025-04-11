@@ -1,36 +1,29 @@
 "use client"
+import '../styles/NotificationList.css';
+import { Link } from "react-router-dom"
+import { useDispatch } from "react-redux"
+import { markNotificationAsRead } from "../slices/notificationSlice"
+import { formatDistanceToNow } from "../utils/formatDate"
 
-import { formatDate } from "../utils/formatDate"
+const NotificationList = ({ notifications }) => {
+  const dispatch = useDispatch()
 
-const NotificationList = ({ notifications, onNotificationClick }) => {
-  if (!notifications || notifications.length === 0) {
-    return <div className="p-4 text-center text-gray-500">No notifications</div>
+  const handleNotificationClick = (notification) => {
+    if (!notification.read) {
+      dispatch(markNotificationAsRead(notification._id))
+    }
   }
 
   return (
-    <div className="max-h-96 overflow-y-auto">
-      <div className="p-2 bg-gray-100 border-b border-gray-200">
-        <h3 className="font-medium text-gray-700">Notifications</h3>
-      </div>
-      <ul>
-        {notifications.map((notification) => (
-          <li
-            key={notification._id}
-            className={`p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${
-              !notification.read ? "bg-green-50" : ""
-            }`}
-            onClick={() => onNotificationClick(notification)}
-          >
-            <div className="flex items-start">
-              <div className="flex-grow">
-                <p className="text-sm text-gray-800">{notification.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{formatDate(notification.createdAt)}</p>
-              </div>
-              {!notification.read && <span className="h-2 w-2 bg-green-600 rounded-full mt-1"></span>}
-            </div>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-3 max-h-96 overflow-y-auto">
+      {notifications.map((notification) => (
+        <div key={notification._id} className={`p-3 rounded-md ${notification.read ? "bg-gray-50" : "bg-green-50"}`}>
+          <Link to={notification.link || "#"} className="block" onClick={() => handleNotificationClick(notification)}>
+            <p className="text-gray-800 text-sm mb-1">{notification.message}</p>
+            <p className="text-xs text-gray-500">{formatDistanceToNow(notification.date)}</p>
+          </Link>
+        </div>
+      ))}
     </div>
   )
 }

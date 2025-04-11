@@ -7,7 +7,7 @@ const CommunityManagerRoute = ({ children }) => {
   return userInfo && (userInfo.role === "communityManager" || userInfo.role === "admin") ? (
     children
   ) : (
-    <Navigate to="/login" replace />
+    <Navigate to="/" />
   )
 }
 
